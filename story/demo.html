@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MVVM 演示</title>
+    </head>
+    <body>
+        <div class="demo-area">
+            <h2>MVVM 实现演示</h2>
+            <div id="app">
+                <p>输入框的值: <span>{{ message }}</span></p>
+                <input type="text" v-model="message" placeholder="输入内容...">
+                <p>计数器: <span>{{ counter }}</span></p>
+                <button @click="increment">增加</button>
+                <button @click="decrement">减少</button>
+                <div class="result">
+                    <p>计算属性: 计数器的两倍是 <span>{{ doubleCounter }}</span></p>
+                </div>
+            </div>
+        </div>
+    </body>
+
+<script>
+// 响应式系统
+function reactive(target) {
+    return new Proxy(target, {
+        get(obj, key) {
+            track(obj, key);
+            return obj[key];
+        },
+        set(obj, key, value) {
+            obj[key] = value;
+            trigger(obj, key);
+            return true;
+        }
+    });
+}
+
+// 依赖收集
+let activeEffect = null;
+const targetMap = new WeakMap();
+
+function track(target, key) {
+    if (activeEffect) {
+        let depsMap = targetMap.get(target);
+        if (!depsMap) {
+            targetMap.set(target, (depsMap = new Map()));
+        }
+        let dep = depsMap.get(key);
+        if (!dep) {
+            depsMap.set(key, (dep = new Set()));
+        }
+        dep.add(activeEffect);
+    }
+}
+
+// 触发更新
+function trigger(target, key) {
+    const depsMap = targetMap.get(target);
+    if (!depsMap) return;
+    const dep = depsMap.get(key);
+    if (dep) {
+        dep.forEach(effect => effect());
+    }
+}
+
+// 创建响应式副作用
+function effect(fn) {
+    activeEffect = fn;
+    fn();
+    activeEffect = null;
+}
+
+// ref函数（Vue 3.0 新增）
+function ref(value) {
+    return reactive({ value });
+}
+
+// computed函数（Vue 3.0 风格）
+function computed(getter) {
+    const result = ref();
+    effect(() => {
+        result.value = getter();
+    });
+    return result;
+}
+
+// 编译模板
+function compile(template) {
+    return function render(ctx) {
+        return template.replace(/\{\{(.*?)\}\}/g, (match, p1) => {
+            const key = p1.trim();
+            // 如果是 ref 对象，返回其 value
+            return ctx[key] && ctx[key].value !== undefined ? ctx[key].value : '';
+        });
+    };
+}
+
+// 创建MiniVue实例（支持setup语法）
+function createApp(options) {
+    return {
+        mount(selector) {
+            const container = document.querySelector(selector);
+            const template = container.innerHTML;
+            // 执行setup函数
+            const setupResult = options.setup();
+            const data = reactive(setupResult);
+            // 编译模板
+            const render = compile(template);
+            // 初始渲染
+            container.innerHTML = render(data);
+            // 设置事件监听器
+            container.querySelectorAll('[v-model]').forEach(el => {
+                const key = el.getAttribute('v-model');
+                el.value = data[key].value;
+                el.addEventListener('input', (e) => {
+                    data[key].value = e.target.value;
+                });
+            });
+            container.querySelectorAll('[\\@click]').forEach(el => {
+                const method = el.getAttribute('@click');
+                el.addEventListener('click', data[method]);
+            });
+            // 响应式更新
+            effect(() => {
+                container.innerHTML = render(data);
+                // 重新绑定事件
+                container.querySelectorAll('[v-model]').forEach(el => {
+                    const key = el.getAttribute('v-model');
+                    el.value = data[key].value;
+                    el.addEventListener('input', (e) => {
+                        data[key].value = e.target.value;
+                    });
+                });
+                container.querySelectorAll('[\\@click').forEach(el => {
+                    const method = el.getAttribute('@click');
+                    el.addEventListener('click', data[method]);
+                });
+            });
+        }
+    };
+}
+
+// 使用setup语法的MiniVue
+const app = createApp({
+    setup() {
+        const message = ref('defaule value');
+        const counter = ref(0);
+        const doubleCounter = computed(() => counter.value * 2);
+        const increment = () => {
+            counter.value++;
+            console.log(counter.value);
+            console.log(window);
+            console.log(window.openAi);
+            console.log(window.openai);
+
+        };
+        const decrement = () => {
+            counter.value--;
+            console.log(counter.value);
+        };
+        return {
+            message,
+            counter,
+            doubleCounter,
+            increment,
+            decrement
+        };
+    }
+});
+// 挂载应用
+app.mount('#app');
+</script>
+</html>
