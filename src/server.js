@@ -64,7 +64,7 @@ const resourceTemplates = [{
         mimeType: "text/html+skybridge",
         _meta: widgetMeta(widgets)
     }];
-function createPizzazServer() {
+function createZkServer() {
     const server = new Server({
         name: "zk-demo-node",
         version: "0.1.0"
@@ -117,7 +117,7 @@ const ssePath = "/mcp";
 const postPath = "/mcp/messages";
 async function handleSseRequest(res) {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    const server = createPizzazServer();
+    const server = createZkServer();
     const transport = new SSEServerTransport(postPath, res);
     const sessionId = transport.sessionId;
     sessions.set(sessionId, { server, transport });
@@ -194,7 +194,7 @@ httpServer.on("clientError", (err, socket) => {
     socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
 httpServer.listen(port, () => {
-    console.log(`Pizzaz MCP server listening on http://localhost:${port}`);
+    console.log(`zk MCP server listening on http://localhost:${port}`);
     console.log(`  SSE stream: GET http://localhost:${port}${ssePath}`);
     console.log(`  Message post endpoint: POST http://localhost:${port}${postPath}?sessionId=...`);
 });
