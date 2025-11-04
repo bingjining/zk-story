@@ -17,7 +17,19 @@
                 <div class="result">
                     <p>计算属性: 计数器的两倍是 <span>{{ doubleCounter }}</span></p>
                 </div>
+
+            <a href="https://baidu.com">
+                测试a标签
+            </a>
+
+            <a href="https://baidu.com" target="_blank">
+                测试a标签 target
+            </a>
+
+            <button @click="onOpen">window.OPEN</button>
+            <button @click="onOpenaiOpen">openai open</button>
             </div>
+
         </div>
     </body>
 
@@ -160,16 +172,29 @@ const app = createApp({
             counter.value--;
             console.log(counter.value);
         };
+
+        
+        const onOpen = ()=>{
+            console.log(123);
+            window.open('https://baidu.com')
+        };
+
+        const onOpenaiOpen = () => {
+            window.openai?.openExternal && window.openai?.openExternal({href:"https://baidu.com"})
+        }
         return {
             message,
             counter,
             doubleCounter,
             increment,
-            decrement
+            decrement,
+            onOpen,
+            onOpenaiOpen
         };
     }
 });
 // 挂载应用
 app.mount('#app');
+
 </script>
 </html>
